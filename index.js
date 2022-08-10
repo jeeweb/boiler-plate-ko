@@ -4,6 +4,7 @@ const port = 5000;
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
 const config = require('./config/key');
+const { auth } = require('./middleware/auth');
 const { User } = require('./models/User');
 
 //application/x-www-form-urlencoded
@@ -23,7 +24,7 @@ app.get('/', (req, res) => {
   res.send('Hello!')
 })
 
-app.post('/register', (req, res) => {
+app.post('/api/users/register', (req, res) => {
   // 회원가입에 필요한 정보들을 client에서 가져오면 데이터베이스에 넣어줌
   const user = new User(req.body);
   user.save((err, userInfo) => {
@@ -60,14 +61,23 @@ app.post('/login', (req, res) => {
         .json({loginSuccess: true, userId: user._id})
 
       })
-
     })
   })
-
-
-
 })
 
+app.get('/api/users/auth', auth, (req, res) => {
+  // 여기까지 미들웨어를 통과해왔다면, Authentication이 true 인 것
+  res.status(200).json({
+    _id: req.user._id,
+    isAdmin: req.user.role === 0 ? false : true,  // role === 0 일반유저, 0이 아니면 관리자
+    isAuth: true,
+    email: req.user.email,
+    name: req.user.name,
+    lastname: req.user.lastname,
+    role: req.user.role,
+    image: req.user.image
+  })
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
